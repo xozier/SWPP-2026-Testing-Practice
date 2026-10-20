@@ -1,6 +1,8 @@
 name: Android Tests
 on:
   pull_request:
+  push:
+    branches: [feature/due-date]
   workflow_dispatch:
 
 permissions:
