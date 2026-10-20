@@ -1,56 +1,52 @@
 package com.example.swpp.tododapp.taskdetail
 
-import androidx.test.filters.MediumTest
-import org.junit.runner.RunWith
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import com.example.swpp.tododapp.R
-import com.example.swpp.tododapp.data.Task
-import org.junit.Test
 import androidx.fragment.app.testing.launchFragmentInContainer
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.isChecked
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
+import androidx.test.espresso.matcher.ViewMatchers.*
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.MediumTest
+import com.example.swpp.tododapp.R
 import com.example.swpp.tododapp.ServiceLocator
+import com.example.swpp.tododapp.data.Task
 import com.example.swpp.tododapp.data.source.FakeAndroidTestRepository
-import com.example.swpp.tododapp.data.source.TasksRepository
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
+import org.hamcrest.CoreMatchers.not
 import org.junit.After
 import org.junit.Before
-import kotlinx.coroutines.test.runTest
-import org.hamcrest.core.IsNot.not
-
+import org.junit.Test
+import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class TaskDetailFragmentTest {
-    private lateinit var repository: TasksRepository
+    private lateinit var repository: FakeAndroidTestRepository
 
     @Before
-    fun initRepository() {
+    fun setup() {
         repository = FakeAndroidTestRepository()
         ServiceLocator.tasksRepository = repository
     }
 
     @After
-    fun cleanupDb() = runTest {
-        ServiceLocator.resetRepository()
-    }
+    fun cleanup() = runTest { ServiceLocator.resetRepository() }
 
     @Test
-    fun activeTaskDetails_DisplayedInUi() = runTest {
-        // GIVEN - Add active task to the DB
-
-        // WHEN - Details fragment launched to display task
-
-        // (Optional for explanation) Pause here for 2 seconds to visually confirm fragment launching
-        Thread.sleep(2000)
-
-        // THEN - Task details are displayed on the screen
-        // make sure that the title/description are both shown and correct
-        // and make sure the "active" checkbox is shown unchecked
-
+    fun taskDetailFragment_activeTask_displaysTitleDescriptionAndUncheckedStatus() = runTest {
+        // GIVEN - An active task in the fake repository.
+        val task = Task("Task Title", "Task Description", false, "active-task")
+        repository.saveTask(task)
+        // WHEN - Its detail fragment is launched.
+        launchFragmentInContainer<TaskDetailFragment>(
+            TaskDetailFragmentArgs(task.id).toBundle(), R.style.AppTheme
+        ).use {
+            // THEN - Its exact details and active status are displayed.
+            onView(withId(R.id.task_detail_title_text)).check(matches(isDisplayed()))
+                .check(matches(withText("Task Title")))
+            onView(withId(R.id.task_detail_description_text)).check(matches(isDisplayed()))
+                .check(matches(withText("Task Description")))
+            onView(withId(R.id.task_detail_complete_checkbox)).check(matches(isDisplayed()))
+                .check(matches(not(isChecked())))
+        }
     }
-    }
+}
